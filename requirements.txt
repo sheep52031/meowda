@@ -1,0 +1,3 @@
+gunicorn
+line-bot-sdk
+Flask

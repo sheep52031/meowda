@@ -1,0 +1,12 @@
+<訓練>
+python train.py --workers 10 --device 0 --batch-size 10 --epochs 600 --img 640 640 --data data/coco_cat.yaml --hyp data/hyp.scratch.custom.yaml --cfg cfg/training/yolov7_cat.yaml --name yolov7_cat --weights yolov7.pt
+
+<測試>
+
+python detect.py --weights 22cat_best.pt --conf 0.77 --img-size 640 --device cpu --source cat_test53.jpg --view-img --no-trace
+<用系統管理員cmd釋放GPU>
+kill -9 pid
+
+
+<export>
+python export.py --weights 22cat_best.pt --grid --end2end --simplify --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
