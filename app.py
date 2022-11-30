@@ -1,5 +1,3 @@
-
-
 from __future__ import unicode_literals
 from flask import Flask, request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
@@ -26,10 +24,6 @@ HEADER = {
     'Authorization': F'Bearer {config.get("line-bot", "channel_access_token")}'
 }
 
-# ngrok 反向伺服器 重開ngrok要記得改
-# 用 GCP 取代
-ngrok_url = "https://ed5d-123-241-158-168.jp.ngrok.io"
-
 
 app = Flask(__name__, static_url_path='/static')
 UPLOAD_FOLDER = 'static'
@@ -50,7 +44,7 @@ HEADER = {
     'Content-type': 'application/json',
     'Authorization': F'Bearer {config.get("line-bot", "channel_access_token")}'
 }
-ngrok_url = "https://4cd9-111-249-10-214.jp.ngrok.io"
+ngrok_url = "https://e237-111-249-10-214.jp.ngrok.io"
 
 
 user_collection = {}
@@ -76,6 +70,7 @@ def whatscat():
 # line_api 得到用戶的資料
 @handler.add(MessageEvent)
 def handle_message(event):
+    global temp_userid
     UserId = event.source.user_id
     profile = line_bot_api.get_profile(UserId)
     temp_userid = profile["id"]
@@ -84,13 +79,12 @@ def handle_message(event):
 
 
 
-
 # line_api 接收訊息
 @handler.add(MessageEvent)
 def handle_message(event):
     if (event.message.type == "image"):
         SendImage = line_bot_api.get_message_content(event.message.id)
-        local_save = './static/' + event.message.id + '.png'
+        local_save = './static/' + event.message.id + '.jpg'
         with open(local_save, 'wb') as file:
             for chenk in SendImage.iter_content():
                 file.write(chenk)
@@ -102,7 +96,7 @@ def handle_message(event):
             "weights": [
                 "22cat_best.pt"
             ],
-            "source": "cat_test53.jpg",
+            "source": "cat_test53.jpeg",
             "img_size": 640,
             "conf_thres": 0.77,
             "iou_thres": 0.45,
@@ -132,16 +126,12 @@ def handle_message(event):
         print('-----photo_path-----'+photo_path)
         clean_photo_path = photo_path[20:]
         print('-----clean_photo_path-----' + clean_photo_path)
-        # user_collection[temp_userid] = photo_path
-        # print('user_collection' + ('-' * 30))
-        # print(user_collection)
+
 
         print('------按以下連結---------')
-        print(ngrok_url + "/static/result_photo/" + clean_photo_path)
+        print(end_point + "/static/result_photo/" + clean_photo_path)
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=result))
-        time.sleep(1)
-        print(ngrok_url + "/static/result_photo/" + clean_photo_path)
-        line_bot_api.reply_message(event.reply_token, ImageSendMessage(original_content_url = ngrok_url + "/static/result_photo/" + clean_photo_path, preview_image_url = ngrok_url + "/static/result_photo/" + clean_photo_path))
+        line_bot_api.reply_message(event.reply_token, ImageSendMessage(original_content_url = end_point + "/static/result_photo/" + clean_photo_path+'jpg', preview_image_url = end_point + "/static/result_photo/" + clean_photo_path+'jpg'))
 
 
 

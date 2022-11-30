@@ -28,7 +28,7 @@ def detect(opt, userid, save_img = False):
     save_dir = Path('./static') / Path('result_photo')
     print('---------------這是存的路徑----------------------' )
     print(save_dir)
-    print('-' * 30)
+    print('-' * 50)
 
 
     # Initialize
