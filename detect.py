@@ -14,9 +14,13 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
+import os 
+
+#允许重复加载动态链接库
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-def detect(opt, userid, save_img = False):
+def detect(opt, save_img = False):
     source, weights, view_img, save_txt, imgsz, trace = opt["source"], opt["weights"], opt["view_img"], opt["save_txt"], opt["img_size"], not opt["no_trace"]
     save_img = not opt["nosave"] and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -134,8 +138,7 @@ def detect(opt, userid, save_img = False):
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or view_img:  # Add bbox to image
-                        # P. S  就是這裡有標籤出現 直接抓label這個變數
-                        label = f'{names[int(cls)]} {conf:.2f}'
+                        label = f'{names[int(cls)]} {conf:.2f}'  # P. S  就是這裡有標籤出現 直接抓label這個變數
                         im0 = plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=5)
 
             # Print time (inference + NMS)
@@ -185,7 +188,7 @@ if __name__ == '__main__':
         "weights": [
             "22cat_best.pt"
         ],
-        "source": "",
+        "source": "test001.jpg",
         "img_size": 640,
         "conf_thres": 0.77,
         "iou_thres": 0.45,

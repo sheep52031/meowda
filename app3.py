@@ -24,8 +24,8 @@ myclient = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster0.fv
 
 
 
-line_bot_api = LineBotApi(config.get('line-bot', 'channel_access_token'))  # 確認 token 是否正確
-handler = WebhookHandler(config.get('line-bot', 'channel_secret'))  # 確認 secret 是否正確
+line_bot_api = LineBotApi(config.get('line-bot', 'channel_access_token'))     # 確認 token 是否正確
+handler = WebhookHandler(config.get('line-bot', 'channel_secret'))            # 確認 secret 是否正確
 my_line_id = config.get('line-bot', 'my_line_id')
 end_point = config.get('line-bot', 'end_point')
 line_login_id = config.get('line-bot', 'line_login_id')
@@ -36,17 +36,15 @@ HEADER = {
     'Authorization': F'Bearer {config.get("line-bot", "channel_access_token")}'
 }
 
-
-
+# 與mongodb atlas做連線
 username = urllib.parse.quote_plus(config.get("mongodb-atlas", "username"))
 password = urllib.parse.quote_plus(config.get("mongodb-atlas", "password"))
 myclient = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster0.fv5ng2z.mongodb.net/?retryWrites=true&w=majority")
 
+
+
 user_collection = {}
 temp_userid = ""
-
-
-
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -70,8 +68,7 @@ def linebot():
     return 'OK'                                           # 驗證 Webhook 使用，不能省略
 
 
-
-
+# 儲存用戶傳來的照片
 def saveimg(message_id):
     SendImage = line_bot_api.get_message_content(message_id)
     local_save = './static/' + message_id + '.jpg'
@@ -81,18 +78,18 @@ def saveimg(message_id):
     return local_save
 
 
-
+# 這隻貓叫做什麼功能
 def whatscat(local_save, replyToken, message_id):
     with open('detect_args.json', newline='') as jsonfile:                     # 載入需要餵進detect.py的Json參數
         opt = json.load(jsonfile)
         opt["source"] = local_save                                             # 將傳入照片來源改成flask預設圖片目錄  改雲端方案時要更變
-        result, result_img_path = detect(opt, temp_userid)                     # 呼叫detect.py detect功能
+        result, result_img_path = detect(opt)                     # 呼叫detect.py detect功能
         result_img = result_img_path[20:]
         cat_name = result[:-5]
         print(cat_name)
         # originalContentUrl = end_point + "/static/result_photo/" + result_img
         # print(originalContentUrl)
-        cat_data = gomongodb(cat_name)
+        cat_data = gomongodb(cat_name)                                        # 呼叫gomongodb 查這隻貓的資料
         print('-'*50)
         print(type(cat_data))
         cat_data = str(cat_data)
