@@ -154,14 +154,14 @@ def whatscat(local_save, replyToken, message_id):
         # print('-----------'+ cat_data)
         try:
             message = [  # 串列
+                # TextSendMessage(  # 傳送文字
+                #     text=cat_data,
+                # ),
                 TextSendMessage(  # 傳送文字
-                    text= cat_data,
-                ),
-                TextSendMessage(  # 傳送文字
-                    text= result,
+                    text=result,
                 ),
                 ImageSendMessage(  # 傳送圖片
-                    original_content_url=end_point + "/static/result_photo/" + message_id+ ".jpg",
+                    original_content_url=end_point + "/static/result_photo/" + message_id + ".jpg",
                     preview_image_url=end_point + "/static/result_photo/" + message_id + ".jpg"
                 )
             ]
@@ -186,4 +186,5 @@ def gomongodb(cat_name):
 
 if __name__ == "__main__":
     app.debug = True
-    app.run()
+    app.run('0.0.0.0', 8000, debug=True)
+

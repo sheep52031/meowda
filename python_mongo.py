@@ -10,60 +10,78 @@ password = urllib.parse.quote_plus(config.get("mongodb-atlas", "password"))
 myclient = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@cluster0.fv5ng2z.mongodb.net/?retryWrites=true&w=majority")
 
 
-# myquery = {'name': '麻糬 Mochi'}
-# cursor = db.collection.find({}, "name")
-# data = list(collection.find(myquery))
 
 
 
-userId = "U3f0ce81f0c841994bffc95b23053c492"
+# 查詢user_test2桶子的所有資料
+# db = myclient["meow_cat_data"]
+# cursor = db.user_test3.find()
+#
+# x = dict()
+# for i in cursor:
+#     x.update(i)
+#
+# if len(x) != 0:
+#     print(x)
+# else:
+#     print("查不到這筆資料")
+    
 
 
-cats_dict = dict()
+
+
+
+# # 查詢此user的這支貓咪蒐集情況
+# userId = "U3f0ce81f0c841994bffc95b23053c492"
+# cat_name = "萱萱Xuan_Xuan"
+# db = myclient["meow_cat_data"]
+# cursor = db.user_test3.find({"_id": userId})
+
+# x = dict()
+# for i in cursor:
+#     x.update(i)
+
+# print(x)
+
+
+
+
+
+
+
+
+# # 刪除user_test2桶子的所有資料
 db = myclient["meow_cat_data"]
-user_dict = {"_id": userId}
+db.user_test3.delete_many({})
 
-cursor = db.user.find({}, {"_id": userId})
-
+cursor = db.user_test3.find()
 x = dict()
 for i in cursor:
     x.update(i)
-
-if not x:
-    try:
-        db.user.insert_one(user_dict)
-        for x in db.cat_data.find({}, {"name": 1}):
-            print(x["name"])
-            cats_dict[x["name"]] = False
-        print(cats_dict)
-        myquery = {"_id": userId}
-        newvalues = {"$set": cats_dict}
-        db.user.update_one(myquery, newvalues)
-        cursor = db.user.find()
-        print(list(cursor))
-    except:
-        print("Couldn't insert userID")
+print(x)
 
 
 
 
 
-def db_update_collection(cat_name, userId):
-    db = myclient["meow_cat_data"]
-    cursor = db.user.find({}, {cat_name: False})
-    x = dict()
-    for i in cursor:
-        x.update(i)
-
-    if x:
-        cat_dict = {cat_name: True}
-        myquery = {"_id": userId}
-        newvalues = {"$set": cat_dict}
-        db.user.update_one(myquery, newvalues)
 
 
 
-cat_name = "傑克Jack"
 
-db_update_collection(cat_name, userId)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
