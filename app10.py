@@ -100,7 +100,8 @@ def linebot():
                     payload["messages"] = [flexmessage(cat_name), reply_detect_img(end_point, events[0]["message"]["id"])]
                     replyMessage(payload)
                     db_update_collection(cat_name, userId)
-                if cat_name == "":
+
+                else:
                     payload["messages"] = [
                         {
                             "type": "text",
@@ -157,12 +158,13 @@ def whatscat(local_save, userId):
         opt = json.load(jsonfile)
         # 將傳入照片來源改成flask預設圖片目錄  改雲端方案時要更變
         opt["source"] = local_save
-        result, result_img_path = detect(opt)               # 呼叫detect.py detect功能
-        if result:
-            cat_name = result[:-5]
-        if result == "":
+        try:
+            result, result_img_path = detect(opt)               # 呼叫detect.py detect功能
+            if result:
+                cat_name = result[:-5]
+        except:
             cat_name = ""
-        print(cat_name)
+
         return cat_name
 
 
@@ -201,7 +203,7 @@ def db_landing_user(userId):
     for i in cursor:
         x.update(i)
 
-    if not x :                                                 
+    if not x:
         try:
             print("查不到這個用戶, 所以新增此用戶")
             db.user_test3.insert_one({"_id": userId})
@@ -240,8 +242,8 @@ def db_user_collection(replyToken, userId):
     db = myclient["meow_cat_data"]
     cursor = db.user_test3.find({"_id": userId})
     x = dict()
-    T_cats = []
-    F_cats = []
+    T_cats = []                                 # 已收集的貓咪
+    F_cats = []                                 # 未收集的貓咪
 
     for i in cursor:
         x.update(i)
