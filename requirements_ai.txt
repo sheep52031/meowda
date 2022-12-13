@@ -1,0 +1,3 @@
+# 參考https://hackmd.io/@cm967413/ByI7ns6Us
+# pytorch與torchvision套件安裝：
+torch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1

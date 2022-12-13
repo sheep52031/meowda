@@ -2,7 +2,7 @@
   "type": "bubble",
   "hero": {
     "type": "image",
-    "url": "https://i.imgur.com/NWpXcg8.jpg",
+    "url": "https://storage.googleapis.com/meowda/meowda_image/heroimageDouhua.jpg",
     "size": "full",
     "aspectRatio": "20:13",
     "aspectMode": "cover",

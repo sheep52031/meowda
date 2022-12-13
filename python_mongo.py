@@ -66,6 +66,43 @@ print(x)
 
 
 
+# userId = "U3f0ce81f0c841994bffc95b23053c492"
+#
+# db = myclient["meow_cat_data"]
+# cursor = db.user_test3.find({"_id": userId})
+# x = dict()
+# StrT = ""
+# T_cats = []  # 已收集的貓咪
+# F_cats = []  # 未收集的貓咪
+#
+# for i in cursor:
+#     x.update(i)
+
+
+# if x:  # 查詢此用戶的收集情況 新用戶T_cats為空
+#     for key, value in x.items():
+#         if str(value) == "True":
+#             T_cats.append(key)
+#         elif str(value) == "False":
+#             F_cats.append(key)
+#         else:
+#             pass
+#
+#     # print(T_cats)
+#
+#     for i in T_cats:
+#         StrT += "✅  "+str(i)+"\n"
+#
+#     print(StrT)
+
+
+
+
+
+
+
+
+
 
 
 

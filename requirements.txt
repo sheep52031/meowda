@@ -1,4 +1,5 @@
-gunicorn
 line-bot-sdk
-Flask
+flask
 pymongo
+uwsgi
+google-cloud-storage

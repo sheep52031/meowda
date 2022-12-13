@@ -11,6 +11,13 @@ scipy>=1.4.1
 tqdm>=4.41.0
 protobuf<4.21.3
 
+# Pytorch -------------------------------------
+
+# 參考https://hackmd.io/@cm967413/ByI7ns6Us
+
+# pytorch與torchvision套件安裝：
+torch==1.10.1 torchvision==0.11.2 torchaudio==0.10.1
+
 # Logging -------------------------------------
 tensorboard>=2.4.1
 # wandb
