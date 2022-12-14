@@ -1,13 +1,15 @@
 import pymongo
 import urllib.parse
 import configparser
+import io
+from PIL import Image, ImageOps
 
 from flask import Flask, request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
 import requests
 import json
 
-from detect_test import detect
+from detect import detect
 from views_template import Carousel_Template
 
 app = Flask(__name__, static_url_path='/static')
@@ -102,8 +104,8 @@ def linebot():
                     replyMessage(payload)
 
             if events[0]["message"]["type"] == "image":                       # 當用戶傳送照片時
-                local_save = get_user_content(events[0]["message"]["id"])     # 呼叫存照片功能得到照片儲存路徑
-                cat_name = whatscat(local_save, userId)                       # 呼叫功能一: 這隻貓叫作什麼名字
+                img = get_user_content(events[0]["message"]["id"])     # 呼叫存照片功能得到照片儲存路徑
+                cat_name = whatscat(img)                       # 呼叫功能一: 這隻貓叫作什麼名字
 
 
                 if cat_name:                                                  # 能夠辨認貓咪回傳貓咪卡片
@@ -157,20 +159,26 @@ def get_user_content(message_id):
     res = requests.get(f'https://api-data.line.me/v2/bot/message/{message_id}/content', headers=HEADER)
     message_content  = res.content
 
-    local_save = './static/user_cats_photo/'+ message_id + '.jpg'
-    with open(local_save, 'wb') as fd:
-        for chunk in res.iter_content():
-            fd.write(chunk)
-    return local_save
+    b = ""
+
+    for chunk in res.iter_content():
+        b += chunk
+
+    img = Image.open(io.BytesIO(b))
+
+    print(type(img))
+
+    return img                                # 回傳圖像資料格式
+
 
 
 # 這隻貓叫作什麼名字(進detect.py)
-def whatscat(local_save, userId):
+def whatscat(img):
     with open('detect_args.json', newline='') as jsonfile:  # 載入需要餵進detect.py的Json參數
         opt = json.load(jsonfile)
-        opt["source"] = local_save
+
         try:
-            result, result_img_path = detect(opt)               # 呼叫detect.py detect功能
+            result, result_img_path = detect(opt, img)               # 呼叫detect.py detect功能
             if result:
                 cat_name = result[:-5]
         except:                                                 # 回傳不能辨認

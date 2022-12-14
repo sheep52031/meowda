@@ -12,15 +12,20 @@ from views_template import Carousel_Template
 
 app = Flask(__name__, static_url_path='/static')
 UPLOAD_FOLDER = 'static'
-ALLOWED_EXTENSIONS = set(['pdf', 'png', 'jpg', 'jpeg', 'gif'])
+
+# 為何這樣就出錯
+# app = Flask(__name__, static_url_path='/static/user_cats_photo/', static_folder='static/user_cats_photo/')
+# UPLOAD_FOLDER = './static/user_cats_photo/'
+
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'HEIC', 'HEIF'])
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 line_bot_api = LineBotApi(config.get(
-    'line-bot', 'channel_access_token'))                                     # 確認 token 是否正確
+    'line-bot', 'channel_access_token'))  # 確認 token 是否正確
 handler = WebhookHandler(config.get(
-    'line-bot', 'channel_secret'))                                           # 確認 secret 是否正確
+    'line-bot', 'channel_secret'))  # 確認 secret 是否正確
 my_line_id = config.get('line-bot', 'my_line_id')
 end_point = config.get('line-bot', 'end_point')
 line_login_id = config.get('line-bot', 'line_login_id')
@@ -36,44 +41,59 @@ password = urllib.parse.quote_plus(config.get("mongodb-atlas", "password"))
 myclient = pymongo.MongoClient(
     f"mongodb+srv://{username}:{password}@cluster0.fv5ng2z.mongodb.net/?retryWrites=true&w=majority")
 
+# 全域變數
+StrF = ""   # 用戶尚未收集的貓咪
+
+
 
 
 @app.route("/", methods=['POST', 'GET'])
+
+
 def linebot():
     if request.method == 'GET':
         return 'ok'
-    body = request.json                                             # 可觀察印出來的訊息JSON格式
+    body = request.json                                                   # 可觀察印出來的訊息JSON格式
     events = body["events"]
 
     if "replyToken" in events[0]:
         payload = dict()
         replyToken = events[0]["replyToken"]
-        payload['replyToken'] = replyToken                          # 回應憑證的格式 進入Line-server的基本資格
-        source = events[0]["source"]                                # 產生event的來源與userID
+        payload['replyToken'] = replyToken                                # 回應憑證的格式 進入Line-server的基本資格
+        source = events[0]["source"]                                      # 產生event的來源與userID
         userId = source["userId"]
-        db_landing_user(userId)                                     # 建立用戶資料到mongodb
+        db_landing_user(userId)                                           # 建立用戶資料到mongodb
 
-
-
-        if events[0]["type"] == "message":                          # 如果events類型是訊息
+        if events[0]["type"] == "message":                                # 如果events類型是訊息
             if events[0]["message"]["type"] == "text":
                 text = events[0]["message"]["text"]
 
                 if text == "這隻貓叫作什麼名字?":
-                    payload["messages"] = [openCamera()]           # 打開相機/打開相簿
-                    replyMessage(payload)                          # 呼叫回傳訊息功能
+                    payload["messages"] = [openCamera()]                  # 打開相機/打開相簿
+                    replyMessage(payload)                                 # 呼叫回傳訊息功能
 
 
                 elif text == "附近景點":
-                    payload["messages"] = [Carousel_Template()]    # 回應景點Carousel_Template
+                    payload["messages"] = [Carousel_Template()]           # 回應景點Carousel_Template
                     replyMessage(payload)
 
                 elif text == "我收集到哪些貓咪?":
                     payload["messages"] = db_user_collection(userId)
                     replyMessage(payload)
 
+                elif text == "查詢尚未收集到的貓咪們":
+                    payload["messages"] = [
+                        {
+                            "type": "text",
+                            "text": StrF
+                        }
+                    ]
 
-                else:                                               # 都沒有觸發回應的文字就echo回他
+                    replyMessage(payload)
+
+
+
+                else:                                                      # 都沒有觸發回應的文字就echo回他
                     payload["messages"] = [
                         {
                             "type": "text",
@@ -82,17 +102,18 @@ def linebot():
                     ]
                     replyMessage(payload)
 
-            if events[0]["message"]["type"] == "image":              # 當用戶傳送照片時
-                local_save = saveimg(events[0]["message"]["id"])     # 呼叫存照片功能得到照片儲存路徑
-                cat_name = whatscat(local_save, userId)              # 呼叫功能一: 這隻貓叫作什麼名字
+            if events[0]["message"]["type"] == "image":                    # 當用戶傳送照片時
+                local_save = get_user_content(events[0]["message"]["id"])  # 呼叫存照片功能得到照片儲存路徑
+                cat_name = whatscat(local_save, userId)                    # 呼叫功能一: 這隻貓叫作什麼名字
 
 
-                if cat_name:                                         # 能夠辨認貓咪回傳貓咪卡片
-                    payload["messages"] = [flexmessage(cat_name), reply_detect_img(end_point, events[0]["message"]["id"])]
+                if cat_name:                                               # 能夠辨認貓咪回傳貓咪卡片
+                    payload["messages"] = [flexmessage(cat_name),
+                                           reply_detect_img(end_point, events[0]["message"]["id"])]
                     replyMessage(payload)
                     db_update_collection(cat_name, userId)
 
-                else:                                                # 當模法無法辨認貓咪時回應
+                if not cat_name:                                           # 當模法無法辨認貓咪時回應
                     payload["messages"] = [
                         {
                             "type": "text",
@@ -100,8 +121,7 @@ def linebot():
                         }
                     ]
                     replyMessage(payload)
-    return 'OK'                                                     # 驗證 Webhook 使用，不能省略
-
+    return 'OK'  # 驗證 Webhook 使用，不能省略
 
 # 回傳訊息功能
 def replyMessage(payload):
@@ -133,13 +153,14 @@ def openCamera():
 
 
 # 儲存用戶傳來的照片
-def saveimg(message_id):
-    SendImage = line_bot_api.get_message_content(
-        message_id)  # message_id 用戶傳訊息的訊息ID
-    local_save = './static/' + message_id + '.jpg'
-    with open(local_save, 'wb') as file:
-        for chenk in SendImage.iter_content():
-            file.write(chenk)
+def get_user_content(message_id):
+    res = requests.get(f'https://api-data.line.me/v2/bot/message/{message_id}/content', headers=HEADER)
+    message_content = res.content
+
+    local_save = './static/user_cats_photo/' + message_id + '.jpg'
+    with open(local_save, 'wb') as fd:
+        for chunk in res.iter_content():
+            fd.write(chunk)
     return local_save
 
 
@@ -147,16 +168,16 @@ def saveimg(message_id):
 def whatscat(local_save, userId):
     with open('detect_args.json', newline='') as jsonfile:  # 載入需要餵進detect.py的Json參數
         opt = json.load(jsonfile)
-        # 將傳入照片來源改成flask預設圖片目錄  改雲端方案時要更變
         opt["source"] = local_save
         try:
-            result, result_img_path = detect(opt)               # 呼叫detect.py detect功能
+            result, result_img_path = detect(opt)           # 呼叫detect.py detect功能
             if result:
-                cat_name = result[:-5]
-        except:                                                 # 回傳不能辨認
-            cat_name = ""
+                label_name = result[:-5]
 
-        return cat_name
+        except:                                             # 回傳不能辨認
+            label_name = ""
+
+    return label_name
 
 
 # FlexMessage 貓咪卡片
@@ -213,6 +234,7 @@ def db_landing_user(userId):
         print("此用戶之前新增過, 所以不用再新增")
         pass
 
+
 # 更新貓咪收集情況
 def db_update_collection(cat_name, userId):
     db = myclient["meow_cat_data"]
@@ -230,17 +252,19 @@ def db_update_collection(cat_name, userId):
 
 # 查詢mongoDB貓咪收集情況
 def db_user_collection(userId):
+    global StrF  # 用戶尚未收集的貓咪
     db = myclient["meow_cat_data"]
     cursor = db.user_test3.find({"_id": userId})
     x = dict()
-    T_cats = []                                 # 已收集的貓咪
-    F_cats = []                                 # 未收集的貓咪
+    T_cats = []  # 已收集的貓咪
+    F_cats = []  # 未收集的貓咪
     StrT = ""
+    StrF = ""  # 每次先清空上次的查詢在更新
 
     for i in cursor:
         x.update(i)
 
-    if x:                                                        # 查詢此用戶的收集情況 新用戶T_cats為空
+    if x:  # 查詢此用戶的收集情況 新用戶T_cats為空
         for key, value in x.items():
             if str(value) == "True":
                 T_cats.append(key)
@@ -249,14 +273,13 @@ def db_user_collection(userId):
             else:
                 pass
 
-
-        StrF = " \n".join(F_cats)
-
-        for i in T_cats:                                          # T_cats轉字串做✅修飾
+        for i in T_cats:  # T_cats轉字串做✅修飾
             StrT += "✅  " + str(i) + "\n"
 
+        for i in F_cats:
+            StrF += "🔰 " + str(i) + "\n"
 
-        if not T_cats:                                            # 新用戶第先按"收集貓貓"的回應
+        if not T_cats:  # 新用戶第先按"收集貓貓"的回應
             message = [
                 {
                     "type": "text",
@@ -283,15 +306,15 @@ def db_user_collection(userId):
             ]
             return message
 
-        if T_cats:                                               # 舊用戶回應"收集貓貓"
+        if T_cats:  # 舊用戶回應"收集貓貓"
             message = [
                 {
                     "type": "text",
-                    "text": "您已收集到的貓咪🐈:\n\n"+StrT
+                    "text": "您已收集到的貓咪🐈:\n\n" + StrT
                 },
                 {
                     "type": "text",
-                    "text": f"還有{len(F_cats)}隻貓咪\n還沒有收集到😅"
+                    "text": f"還有🐈{len(F_cats)}隻貓咪\n尚未收集到😅"
                 },
                 {
                     "type": "image",
@@ -300,27 +323,21 @@ def db_user_collection(userId):
                 },
                 {
                     "type": "template",
-                    "altText": "拍張猴硐貓村的貓咪貓咪照吧~",
+                    "altText": "This is a buttons template",
                     "template": {
                         "type": "buttons",
-                        "thumbnailImageUrl": "https://imgur.com/nYf3gdH",
-                        "imageAspectRatio": "rectangle",
-                        "imageSize": "cover",
-                        "imageBackgroundColor": "#FFFFFF",
-                        "text": "尚未收集到的貓咪們",
+                        "text": "查詢尚未收集到的貓咪們🐈",
                         "actions": [
                             {
                                 "type": "message",
-                                "label": "查詢",
-                                "text": "查詢"
+                                "label": "查詢貓咪們",
+                                "text": "查詢尚未收集到的貓咪們"
                             }
                         ]
                     }
                 }
-
             ]
             return message
-
 
 
 

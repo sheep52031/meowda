@@ -191,33 +191,33 @@ def detect(opt, save_img = False):
 
 
 # 單獨執行此程式
-if __name__ == '__main__':
-    detect_args = """
-    {
-        "weights": [
-            "22cat_best.pt"
-        ],
-        "source": "mess01.jpg",
-        "img_size": 640,
-        "conf_thres": 0.77,
-        "iou_thres": 0.45,
-        "device": "cpu",
-        "view_img": true,
-        "save_txt": false,
-        "save_conf": false,
-        "nosave": false,
-        "classes": null,
-        "agnostic_nms": false,
-        "augment": false,
-        "update": false,
-        "project": "",
-        "name": "",
-        "exist_ok": false,
-        "no_trace": true
-    }
-    """
-    json_args = json.loads(detect_args)
-    opt = json_args
-    label,save_img = detect(opt)
-    print(label)
-    print(save_img)
+# if __name__ == '__main__':
+#     detect_args = """
+#     {
+#         "weights": [
+#             "22cat_best.pt"
+#         ],
+#         "source": "mess01.jpg",
+#         "img_size": 640,
+#         "conf_thres": 0.77,
+#         "iou_thres": 0.45,
+#         "device": "cpu",
+#         "view_img": true,
+#         "save_txt": false,
+#         "save_conf": false,
+#         "nosave": false,
+#         "classes": null,
+#         "agnostic_nms": false,
+#         "augment": false,
+#         "update": false,
+#         "project": "",
+#         "name": "",
+#         "exist_ok": false,
+#         "no_trace": true
+#     }
+#     """
+#     json_args = json.loads(detect_args)
+#     opt = json_args
+#     label,save_img = detect(opt)
+#     print(label)
+#     print(save_img)
