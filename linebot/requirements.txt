@@ -1,0 +1,7 @@
+# LineBot -------------------------------------
+
+line-bot-sdk
+flask
+pymongo
+uwsgi
+# google-cloud-storage
