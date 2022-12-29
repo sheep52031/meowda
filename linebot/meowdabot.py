@@ -1,8 +1,5 @@
 # app4.py 修改mongoDB的用戶桶子
-
-
-import configparser                                 
-
+                               
 # MongoDB Atlas 
 import pymongo                                      
 import urllib.parse
@@ -27,25 +24,24 @@ from views_template import Carousel_Template
 
 
 # 導入設定檔
-config = configparser.ConfigParser()
-config.read('config.ini')
+with open("env.json") as f:
+    env = json.load(f)
 
-line_bot_api = LineBotApi(config.get('line-bot', 'channel_access_token'))  # 確認 token 是否正確
-handler = WebhookHandler(config.get('line-bot', 'channel_secret'))         # 確認 secret 是否正確
-my_line_id = config.get('line-bot', 'my_line_id')
-end_point = config.get('line-bot', 'end_point')
-line_login_id = config.get('line-bot', 'line_login_id')
-line_login_secret = config.get('line-bot', 'line_login_secret')
+line_bot_api = LineBotApi(env['YOUR_CHANNEL_ACCESS_TOKEN'])  # 確認 token 是否正確
+handler = WebhookHandler(env['YOUR_CHANNEL_SECRET'])         # 確認 secret 是否正確
+end_point = env["end_point"]
+
+
 
 HEADER = {
     'Content-type': 'application/json',
-    'Authorization': F'Bearer {config.get("line-bot", "channel_access_token")}'
+    'Authorization': F'Bearer {env["YOUR_CHANNEL_ACCESS_TOKEN"]}'
 }
 
 
 # 與mongodb atlas做連線
-username = urllib.parse.quote_plus(config.get("mongodb-atlas", "username"))
-password = urllib.parse.quote_plus(config.get("mongodb-atlas", "password"))
+username = urllib.parse.quote_plus(env['MG_username'])
+password = urllib.parse.quote_plus(env['MG_password'])
 myclient = pymongo.MongoClient(
     f"mongodb+srv://{username}:{password}@cluster0.fv5ng2z.mongodb.net/?retryWrites=true&w=majority")
 
@@ -54,8 +50,7 @@ myclient = pymongo.MongoClient(
 os.environ['GOOGlE_APPLICATION_CREDENTIALS'] = './GCS/ServiceKey_GoogleCloud.json'
 storage_client = storage.Client()
 
-# YOLOv7的API
-url = "http://localhost:8000/predict"
+
 CLASSES = [
 '躲貓貓Hide_and_Seek','麻糬Mochi','跩哥Malfoy','瞌睡蟲Sleepy','小孤獨Lonely','阿虎Tiger','豆花Douhua','小花Flower','美女Prettygirl','膽小鬼Coward','小妖豔Shower','小淘氣Player','小煤炭Soot_Spirits','傑克Jack','麒麟Kirin','熊貓Panda','站長Station_Master','萱萱Xuan_Xuan','跳跳虎Jumping_Tiger','沃卡萊姆Vodka_Lime','馬丁尼Martini','莫希托Mojito']
 
@@ -67,7 +62,6 @@ app = Flask(__name__, static_url_path='/static')
 
 UPLOAD_FOLDER = 'static'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'HEIC', 'HEIF'])
-
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -123,19 +117,19 @@ def linebot():
                     replyMessage(payload)
 
             if events[0]["message"]["type"] == "image":                                # 當用戶傳送照片時
+                print(events[0]["message"]["id"])
                 image_bytesio = get_user_content(events[0]["message"]["id"])           # 呼叫存照片功能得到照片儲存路徑
                 cat_name = whatscat(image_bytesio, events[0]["message"]["id"])                                      # 呼叫功能一: 這隻貓叫作什麼名字
-    
+                print(cat_name)
                 try:
-                    payload["messages"] = [flexmessage(cat_name),
-                                           reply_detect_img(end_point, events[0]["message"]["id"])]
+                    payload["messages"] = [flexmessage(cat_name), reply_detect_img(end_point, events[0]["message"]["id"])]
                     replyMessage(payload)
                     db_update_collection(cat_name, userId, events[0]["message"]["id"])
                     
                     try:
                         image_bytesio.seek(0)
                         upload_blob_from_stream('meowda', image_bytesio, f'user_cats_image/{userId}/{events[0]["message"]["id"]}')
-                        print("到這裡可以")
+                        print("到這裡可以5")
                     except:
                         print("儲存用戶貓咪照片到GCS失敗了")
 
@@ -194,22 +188,28 @@ def whatscat(image_bytesio, message_id):
     files = {'file': image_bytesio}
 
     try:
-        res = requests.post(url, files=files, stream=True)         # request yolov7 server
-        pred = np.asarray(json.loads(res.json()))                  # 得到推論結果
+        url = env["yolo_url"]
+        res = requests.post(url=url, files=files, stream=True)         # request yolov7 server
+        pred = np.asarray(json.loads(res.json()))                      # 得到推論結果
 
         image_bytesio.seek(0)
         image = Image.open(io.BytesIO(image_bytesio.read()))
+        try:
+            # 畫出偵測結果框選圖片
+            draw = ImageDraw.Draw(image)
+            print("這邊OK2")
+            font = ImageFont.truetype("./wqy-zenhei/wqy-zenhei.ttc", 40, encoding="unic")  # 設置字體
+            print("這邊OK3")
+            for x1, y1, x2, y2, conf, class_id in pred:                   # 看class_id決定第幾個標籤得到貓咪分類
+                text = f"{CLASSES[int(class_id)]}  {conf:.2f}"         
+                draw.rectangle(((x1+10, y1+40), (x2+20, y2+10)), outline='blue', width=15)
+                draw.rectangle(((x1+10, y1+10), (x2+20, y1+50)), fill='yellow')
+                draw.text((x1+20, y1+10), text, fill ="red", font = font, align ="right")
 
-        # 畫出偵測結果框選圖片
-        draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype("simsun.ttc", 40, encoding="unic")  # 設置字體
-        for x1, y1, x2, y2, conf, class_id in pred:                   # 看class_id決定第幾個標籤得到貓咪分類
-            text = f"{CLASSES[int(class_id)]}  {conf:.2f}"         
-            draw.rectangle(((x1+10, y1+40), (x2+20, y2+10)), outline='blue', width=15)
-            draw.rectangle(((x1+10, y1+10), (x2+20, y1+50)), fill='yellow')
-            draw.text((x1+20, y1+10), text, fill ="red", font = font, align ="right")
-
-        image.save(f"./static/result_photo/{message_id}.jpg")         # 暫存在本機./static/result_photo中
+            image.save(f"./static/result_photo/{message_id}.jpg")         # 暫存在本機./static/result_photo中
+        except:
+            pass
+        
         return text[:-6]
 
     except:                                                           # 推論失敗就跳出
@@ -245,7 +245,7 @@ def db_landing_user(userId):
     cats_dict = dict()
     db = myclient["meow_cat_data"]
 
-    cursor = db.user_test3.find({"_id": userId})
+    cursor = db.user.find({"_id": userId})
 
     x = dict()
     for i in cursor:
@@ -253,7 +253,6 @@ def db_landing_user(userId):
 
     if not x:
         try:
-            print("查不到這個用戶, 所以新增此用戶")
             db.user.insert_one({"_id": userId})
             for x in db.cat_data.find({}, {"name": 1}):
                 print(x["name"])
@@ -264,7 +263,8 @@ def db_landing_user(userId):
             db.user.update_one(myquery, newvalues)
             cursor = db.user.find()
         except:
-            print("error無法新增這個新用戶")
+            print("重複登入 待修改")
+
     else:
         print("此用戶之前新增過, 所以不用再新增")
         pass
@@ -398,5 +398,4 @@ def upload_blob_from_stream(bucket_name, file_obj, destination_blob_name):
         return False
 
 if __name__ == "__main__":
-    app.debug = True
-    app.run('0.0.0.0', 5000, debug=True)
+    app.run()

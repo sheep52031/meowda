@@ -79,7 +79,7 @@ def yolo(file: UploadFile = File(...)):
 nest_asyncio.apply()
 
 # Host depends on the setup you selected (docker or virtual env)
-host = "0.0.0.0" if os.getenv("DOCKER-SETUP") else "127.0.0.1"
+# host = "0.0.0.0" if os.getenv("DOCKER-SETUP") else "127.0.0.1"
 
-# Spin up the server!    
-uvicorn.run(app, host=host, port=8000)
+# # Spin up the server!    
+# uvicorn.run(app, host=host, port=8000)
