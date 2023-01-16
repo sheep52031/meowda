@@ -1,5 +1,3 @@
-# app4.py 修改mongoDB的用戶桶子
-                               
 # MongoDB Atlas 
 import pymongo                                      
 import urllib.parse
@@ -17,7 +15,7 @@ from linebot import LineBotApi, WebhookHandler
 import io
 import json
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont
 
 # LineBot flexmessage 模板
 from views_template import Carousel_Template
@@ -77,6 +75,7 @@ def linebot():
         payload['replyToken'] = replyToken                         # 回應憑證的格式 進入Line-server的基本資格
         source = events[0]["source"]                               # 產生event的來源與userID
         userId = source["userId"]
+        print(userId)
         db_landing_user(userId)                                    # 建立用戶資料到mongodb
 
         if events[0]["type"] == "message":                         # 如果events類型是訊息
@@ -117,21 +116,28 @@ def linebot():
                     replyMessage(payload)
 
             if events[0]["message"]["type"] == "image":                                # 當用戶傳送照片時
-                print(events[0]["message"]["id"])
                 image_bytesio = get_user_content(events[0]["message"]["id"])           # 呼叫存照片功能得到照片儲存路徑
-                cat_name = whatscat(image_bytesio, events[0]["message"]["id"])                                      # 呼叫功能一: 這隻貓叫作什麼名字
+                cat_name, result_image =  whatscat(image_bytesio)                      # 呼叫功能一: 這隻貓叫作什麼名字
                 print(cat_name)
                 try:
-                    payload["messages"] = [flexmessage(cat_name), reply_detect_img(end_point, events[0]["message"]["id"])]
+                    try:
+                        bs = io.BytesIO()
+                        result_image.save(bs, "jpeg")
+                        bs.seek(0)
+                        upload_blob_from_stream('meowda', bs, f'result_cats_image/{userId}/{events[0]["message"]["id"]}')
+                    except:
+                        print("上傳GCS辨認框選照失敗")
+
+                    payload["messages"] = [flexmessage(cat_name), reply_detect_img(userId, events[0]["message"]["id"])]
                     replyMessage(payload)
                     db_update_collection(cat_name, userId, events[0]["message"]["id"])
                     
                     try:
                         image_bytesio.seek(0)
                         upload_blob_from_stream('meowda', image_bytesio, f'user_cats_image/{userId}/{events[0]["message"]["id"]}')
-                        print("到這裡可以5")
+
                     except:
-                        print("儲存用戶貓咪照片到GCS失敗了")
+                        print("上傳GCS用戶貓咪照片失敗")
 
                 except:
                     payload["messages"] = [
@@ -141,7 +147,7 @@ def linebot():
                         }
                     ]
                     replyMessage(payload)
-    return 'OK'                                                            # 驗證 Webhook 使用，不能省略
+    return 'OK'                                                                        # 驗證 Webhook 使用，不能省略
 
 
 # 回傳訊息功能
@@ -182,8 +188,7 @@ def get_user_content(message_id):
 
 
 # 這隻貓叫作什麼名字
-def whatscat(image_bytesio, message_id):
-
+def whatscat(image_bytesio):
 
     files = {'file': image_bytesio}
 
@@ -191,28 +196,22 @@ def whatscat(image_bytesio, message_id):
         url = env["yolo_url"]
         res = requests.post(url=url, files=files, stream=True)         # request yolov7 server
         pred = np.asarray(json.loads(res.json()))                      # 得到推論結果
+        image = Image.open(image_bytesio)
 
-        image_bytesio.seek(0)
-        image = Image.open(io.BytesIO(image_bytesio.read()))
         try:
             # 畫出偵測結果框選圖片
             draw = ImageDraw.Draw(image)
-            print("這邊OK2")
             font = ImageFont.truetype("./wqy-zenhei/wqy-zenhei.ttc", 40, encoding="unic")  # 設置字體
-            print("這邊OK3")
-            for x1, y1, x2, y2, conf, class_id in pred:                   # 看class_id決定第幾個標籤得到貓咪分類
+            for x1, y1, x2, y2, conf, class_id in pred:                # 看class_id決定第幾個標籤得到貓咪分類
                 text = f"{CLASSES[int(class_id)]}  {conf:.2f}"         
                 draw.rectangle(((x1+10, y1+40), (x2+20, y2+10)), outline='blue', width=15)
                 draw.rectangle(((x1+10, y1+10), (x2+20, y1+50)), fill='yellow')
                 draw.text((x1+20, y1+10), text, fill ="red", font = font, align ="right")
-
-            image.save(f"./static/result_photo/{message_id}.jpg")         # 暫存在本機./static/result_photo中
         except:
             pass
-        
-        return text[:-6]
+        return text[:-6], image
 
-    except:                                                           # 推論失敗就跳出
+    except:                                                            # 推論失敗就跳出
         return ""
 
 
@@ -231,11 +230,12 @@ def flexmessage(cat_name):
 
 
 # 貓咪偵測框選結果照片
-def reply_detect_img(end_point, message_id):
+def reply_detect_img(user_id, message_id):
+    print("https://storage.googleapis.com/meowda/result_cats_image/"+ user_id +"/"+ message_id)
     message = {
         "type": "image",
-        "originalContentUrl": end_point + "/static/result_photo/" + message_id + ".jpg",
-        "previewImageUrl": end_point + "/static/result_photo/" + message_id + ".jpg"
+        "originalContentUrl": "https://storage.googleapis.com/meowda/result_cats_image/"+ user_id + "/" + message_id,
+        "previewImageUrl": "https://storage.googleapis.com/meowda/result_cats_image/" + user_id+ "/" + message_id
     }
     return message
 
@@ -385,7 +385,7 @@ def upload_blob_from_stream(bucket_name, file_obj, destination_blob_name):
         storage_client = storage.Client()
         bucket = storage_client.get_bucket(bucket_name)
         blob = bucket.blob(destination_blob_name)
-
+        blob.content_type = 'image/jpeg'
         # Upload data from the stream to your bucket.
         blob.upload_from_file(file_obj)
        
