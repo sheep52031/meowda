@@ -69,7 +69,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "d01c474e3d4c24b6",
@@ -146,6 +147,9 @@
       "command-palette:開啟命令面板": false
     }
   },
-  "active": "4341424719d6d60f",
-  "lastOpenFiles": []
+  "active": "b8f7eaa092272546",
+  "lastOpenFiles": [
+    "meowda_linebot_QR.png",
+    "README.md"
+  ]
 }

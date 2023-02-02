@@ -1,33 +1,39 @@
 # System Design
-![[架構圖.png]]
 
+![架構圖](https://storage.googleapis.com/meowda/github_readme/%E6%9E%B6%E6%A7%8B%E5%9C%96.png)
 # Our Service
-![[測試服務.png]]
+![測試服務](https://storage.googleapis.com/meowda/github_readme/%E6%B8%AC%E8%A9%A6%E6%9C%8D%E5%8B%99.png)
 
 
 
 # AI Model - YoloV7 Object Detecter
-![[ai_1.png]]![[ai_2.png]]![[ai_3.png]]![[ai_4.png]]![[ai_5.png]]![[ai_6.png]]![[ai_7.png]]![[ai_8.gif]]
-
+![ai_1](https://storage.googleapis.com/meowda/github_readme/ai_1.png)
+![ai_2](https://storage.googleapis.com/meowda/github_readme/ai_2.png)
+![ai_3](https://storage.googleapis.com/meowda/github_readme/ai_3.png)
+![ai_4](https://storage.googleapis.com/meowda/github_readme/ai_4.png)
+![ai_5](https://storage.googleapis.com/meowda/github_readme/ai_5.png)
+![ai_6](https://storage.googleapis.com/meowda/github_readme/ai_6.png)
+![ai_7](https://storage.googleapis.com/meowda/github_readme/ai_7.png)
+![ai_8](https://storage.googleapis.com/meowda/github_readme/ai_8.gif)
 
 # LineBOT function with dataflow
 ## Function1:  Cat recognition service
 This function can recognize cats locally and obtain related information about the cat, allowing you to have a better understanding of it.
-![[function2.png]]
+![f1](https://storage.googleapis.com/meowda/github_readme/fuction1.png)
 ## Function2: Nearby tourist attractions and food landmarks
 
-![[function3.png]]
+![f2](https://storage.googleapis.com/meowda/github_readme/function2.png)
 ## Function3: Check which cats you have collected and how many are left to collect.
 
-![[function3.png]]
+![f3](https://storage.googleapis.com/meowda/github_readme/function3.png)
 
 # Future applications of related technologies
 
 ## Smart pet door
-![[未來應用1.png]]
+![a1](https://storage.googleapis.com/meowda/github_readme/%E6%9C%AA%E4%BE%86%E6%87%89%E7%94%A81.png)
 
 ## Making interactive games for pet cafes
-![[未來應用2.png]]
+![a2](https://storage.googleapis.com/meowda/github_readme/%E6%9C%AA%E4%BE%86%E6%87%89%E7%94%A82.png)
 
 ## Defect detection in production line
-![[未來應用3.png]]
+![a3](https://storage.googleapis.com/meowda/github_readme/%E6%9C%AA%E4%BE%86%E6%87%89%E7%94%A83.png)
