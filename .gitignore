@@ -1,3 +1,11 @@
 config.ini
 GCS/
 MobaXterm SSH/
+/linebot/__pycache__
+meowda_linebot_QR.png
+/yolov7/__pycache__
+.vscode
+.obsidian
+.idea
+.DS_Store
+~$Meowda專題簡報-version24.pptx
